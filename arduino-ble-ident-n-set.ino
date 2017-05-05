@@ -20,12 +20,13 @@
 #define INITIAL_DELAY 200
 
 enum ModuleType { HM10, CC41, MLT_BT05, Unknown };
-enum Operation {Quit, SetName, SetPass, SetStateBehavior, SetPower, SetType, SetPeripheral, SetCentral, ConnectToPeripheral, RawCommand, SetEnableResetHigh, SetEnableResetLow, SerialMode, DisplayMainSettings};
+enum Operation {Quit, SetName, SetPass, SetStateBehavior, SetPower, SetType, SetPeripheral, SetCentral, ConnectToPeripheral, ToggleEnable, RawCommand, SerialMode, DisplayMainSettings};
 
 /// State
 SoftwareSerial * ble = NULL; // supports modules connected over software serial. no current support for Serial2, etc.
 int rxPin, txPin, statePin, enableResetPin;
 ModuleType moduleType;
+bool bEnableHigh = false;
 
 /// Special functions
 // define here due to custom return type
@@ -85,14 +86,11 @@ void setup()
     case ConnectToPeripheral:
       connectToPeripheral();
       break;
+    case ToggleEnable:
+      toggleEnable();
+      break;
     case RawCommand:
       rawCommand();
-      break;
-    case SetEnableResetHigh:
-      setEnableResetHigh();
-      break;
-    case SetEnableResetLow:
-      setEnableResetLow();
       break;
     case SerialMode:
       serialMode();
@@ -287,14 +285,16 @@ Operation getMenuSelection()
   Serial.println(F("6) Set peripheral mode"));
   Serial.println(F("7) Set central mode and scan for devices"));
   Serial.println(F("8) Connect to peripheral"));
-  Serial.println(F("9) Raw command"));
   if(enableResetPin != PIN_MISSING)
   {
-    Serial.println(F("10) Set Enable/Reset to High"));
-    Serial.println(F("11) Set Enable/Reset to Low"));
+    if(bEnableHigh)
+      Serial.println(F("9) Set Enable/Reset to Low"));
+    else
+      Serial.println(F("9) Set Enable/Reset to High"));
   }
-  Serial.println(F("12) Serial mode"));
-	Serial.println(F("13) Display main settings"));
+  Serial.println(F("10) Raw command"));
+  Serial.println(F("11) Serial mode"));
+	Serial.println(F("12) Display main settings"));
 	int op = readInt(F("Enter menu selection"), 0);
 	return (Operation)(op);
 }
@@ -383,22 +383,26 @@ void connectToPeripheral()
   echoResult();
 }
 
+void toggleEnable()
+{
+  if(bEnableHigh)
+  {
+    bEnableHigh = false;
+    Serial.println(F("Setting Enable/Reset PIN to low"));
+    digitalWrite(enableResetPin, LOW);
+  }
+  else
+  {
+    bEnableHigh = true;
+    Serial.println(F("Setting Enable/Reset PIN to high"));
+    digitalWrite(enableResetPin, HIGH);
+  }
+}
+
 void rawCommand()
 {
   String command = readString(F("Enter command"), F("AT"));
   doCommandAndEchoResult(command.c_str());
-}
-
-void setEnableResetHigh()
-{
-  Serial.println(F("Setting Enable/Reset PIN to high"));
-  digitalWrite(enableResetPin, HIGH);
-}
-
-void setEnableResetLow()
-{
-  Serial.println(F("Setting Enable/Reset PIN to low"));
-  digitalWrite(enableResetPin, LOW);
 }
 
 void serialMode()
