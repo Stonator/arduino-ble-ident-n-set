@@ -6,10 +6,17 @@
 /// Consts
 
 // BLE module default pins
-#define RX_PIN 8
-#define TX_PIN 9
-#define STATE_PIN 7
-#define ENABLE_RESET_PIN 6
+#if defined(__AVR_ATmega2560__) // Mega does not support all pins for software serial, see https://www.arduino.cc/en/Reference/SoftwareSerial
+    #define RX_PIN 10
+    #define TX_PIN 11
+    #define STATE_PIN 9
+    #define ENABLE_RESET_PIN 8
+#else
+    #define RX_PIN 8
+    #define TX_PIN 9
+    #define STATE_PIN 7
+    #define ENABLE_RESET_PIN 6
+#endif
 #define PIN_MISSING -1
 
 // misc
